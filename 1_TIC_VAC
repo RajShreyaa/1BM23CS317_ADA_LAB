@@ -118,7 +118,7 @@ manual_game()
 
 
 
-# VACCUUM CLEANER 
+# VACCUUM CLEANER 2 ROOMS 
 def vacuum_cleaner():
     # Input the state of rooms A and B
     state_A = int(input("Enter state of A (0 for clean, 1 for dirty): "))
@@ -155,3 +155,99 @@ if __name__ == "__main__":
                           vacuum_cleaner()
 
 
+
+
+#VACCUUM 4 ROOMS 
+
+rooms = {
+    'A': True,
+    'B': True,
+    'C': True,
+    'D': True
+}
+
+# The agent's current location
+current_room = 'A'
+
+def vacuum_cleaner_agent():
+
+    global current_room
+
+    print("---Starting Vacuum Cleaner Agent---")
+
+    print("Initial state:", rooms)
+    print("Agent starts in room A.")
+
+    # A set to track visited rooms to avoid loops
+    visited = set()
+
+    # While there's any dirty room left
+    while any(rooms.values()):
+        # Clean the current room if dirty
+        if rooms[current_room]:
+            print(f"\nSucking dust in room {current_room}...")
+            rooms[current_room] = False
+            print(f"Room {current_room} is now clean.")
+        visited.add(current_room)
+
+        # Decide where to go next based on current location and available dirty rooms
+        next_room = None
+
+        if current_room == 'A':
+
+            options = [room for room in ['B', 'C'] if rooms[room] and room not in visited]
+            if options:
+                while True:
+                    user_choice = input(f"Do you want to go to room {options[0]} or room {options[-1]}? (Type '{options[0]}' or '{options[-1]}'): ").upper()
+                    if user_choice in options:
+                        next_room = user_choice
+                        break
+                    else:
+                        print("Invalid input. Please choose a valid dirty room.")
+            else:
+                # Default to B or C if no input needed
+                for room in ['B', 'C']:
+                    if rooms[room] and room not in visited:
+                        next_room = room
+                        break
+
+        elif current_room == 'B':
+            if rooms['D'] and 'D' not in visited:
+                print("Moving to room D.")
+                next_room = 'D'
+            elif rooms['A'] and 'A' not in visited:
+                next_room = 'A'
+
+        elif current_room == 'C':
+            if rooms['D'] and 'D' not in visited:
+                print("Moving to room D.")
+                next_room = 'D'
+            elif rooms['A'] and 'A' not in visited:
+                next_room = 'A'
+
+        elif current_room == 'D':
+            if rooms['C'] and 'C' not in visited:
+                print("Moving to room C.")
+                next_room = 'C'
+            elif rooms['B'] and 'B' not in visited:
+                next_room = 'B'
+
+        # Fallback: find any remaining dirty room not visited yet
+        if not next_room:
+            for room in ['A', 'B', 'C', 'D']:
+                if rooms[room] and room not in visited:
+                    next_room = room
+                    break
+
+        if next_room:
+            print(f"Moving to room {next_room}.")
+            current_room = next_room
+        else:
+            # No dirty unvisited rooms left
+            break
+
+    print("\n---Goal State Achieved---")
+    print("All rooms are clean:", rooms)
+    print("---Agent is done---")
+
+vacuum_cleaner_agent()
