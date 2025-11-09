@@ -1,0 +1,80 @@
+#N QUEENS HILL CLIMBING 
+import copy
+
+def print_board(state):
+    n = len(state)
+    for row in range(n):
+        line = ""
+        for col in range(n):
+            line += "Q " if state[col] == row else ". "
+        print(line)
+    print()
+
+def heuristic(state):
+    """Calculate number of attacking pairs of queens."""
+    attacks = 0
+    n = len(state)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if state[i] == state[j]:  # same row
+                attacks += 1
+            if abs(state[i] - state[j]) == abs(i - j):  # same diagonal
+                attacks += 1
+    return attacks
+
+def get_neighbors(state):
+    """Generate all neighbors by moving one queen in its column to another row."""
+    neighbors = []
+    n = len(state)
+    for col in range(n):
+        for row in range(n):
+            if state[col] != row:
+                new_state = list(state)
+                new_state[col] = row
+                neighbors.append(new_state)
+    return neighbors
+
+def hill_climbing(start_state):
+    current = copy.deepcopy(start_state)
+    while True:
+        current_h = heuristic(current)
+        if current_h == 0:
+            return current, 0
+
+        neighbors = get_neighbors(current)
+        neighbor_h = [heuristic(neigh) for neigh in neighbors]
+
+        min_h = min(neighbor_h)
+        if min_h >= current_h:
+            # No improvement possible
+            return current, current_h
+
+        current = neighbors[neighbor_h.index(min_h)]
+
+def generate_all_states(n):
+    """Generate all possible states: n^n states where each queen can be in any row."""
+    states = []
+    def backtrack(col=0, state=[]):
+        if col == n:
+            states.append(state.copy())
+            return
+        for row in range(n):
+            state.append(row)
+            backtrack(col+1, state)
+            state.pop()
+    backtrack()
+    return states
+
+if __name__ == "__main__":
+    n = 4
+    all_states = generate_all_states(n)
+
+    print(f"Total initial states for {n} queens: {len(all_states)}\n")
+
+    for i, start in enumerate(all_states, start=1):
+        final_state, cost = hill_climbing(start)
+        print(f"Initial state {i}: {start}")
+        print(f"Final state after hill climbing:")
+        print_board(final_state)
+        print(f"Cost (heuristic): {cost}")
+        print("="*30)
