@@ -1,0 +1,76 @@
+import pandas as pd
+from itertools import product
+import re
+
+def tokenize(sentence):
+    # Now also tokenize symbols like ∨ (logical OR)
+    # Added ∨, ∧, ¬ in the regex to separate them as tokens
+    token_pattern = r'\w+|[()∨∧¬]'
+    return re.findall(token_pattern, sentence)
+
+def pl_true(sentence, model):
+    tokens = tokenize(sentence)
+    logical_ops = {'and', 'or', 'not', '∨', '∧', '¬'}
+    evaluated_tokens = []
+    for token in tokens:
+        if token == '∨':
+            evaluated_tokens.append('or')  # replace symbol with python 'or'
+        elif token == '∧':
+            evaluated_tokens.append('and')  # replace symbol with python 'and'
+        elif token == '¬':
+            evaluated_tokens.append('not')  # replace symbol with python 'not'
+        elif token.lower() in logical_ops:
+            evaluated_tokens.append(token.lower())
+        elif token in model:
+            evaluated_tokens.append(str(model[token]))
+        else:
+            evaluated_tokens.append(token)
+    eval_sentence = ' '.join(evaluated_tokens)
+    try:
+        return eval(eval_sentence)
+    except Exception as e:
+        print(f"Error evaluating sentence: {eval_sentence}")
+        raise e
+
+def tt_entails(kb, alpha, symbols):
+    truth_table = []
+    for model in product([False, True], repeat=len(symbols)):
+        model_dict = dict(zip(symbols, model))
+        kb_value = pl_true(kb, model_dict)
+        alpha_value = pl_true(alpha, model_dict)
+        row = {
+            'A': model_dict.get('A', False),
+            'B': model_dict.get('B', False),
+            'C': model_dict.get('C', False),
+            'A ∨ C': model_dict.get('A', False) or model_dict.get('C', False),
+            'B ∨ ¬C': model_dict.get('B', False) or not model_dict.get('C', False),
+            'KB': kb_value,
+            'α': alpha_value
+        }
+        truth_table.append(row)
+        if kb_value and not alpha_value:
+            return False, pd.DataFrame(truth_table)
+    return True, pd.DataFrame(truth_table)
+
+def get_symbols(kb, alpha):
+    return sorted(set(re.findall(r'[A-Z]', kb + alpha)))
+
+# Example usage:
+kb = "(A ∨ C) ∧ (B ∨ ¬C)"
+alpha = "A ∨ B"
+symbols = get_symbols(kb, alpha)
+result, truth_table = tt_entails(kb, alpha, symbols)
+
+def highlight_kb_alpha(row):
+    if row['KB'] and row['α']:
+        return ['background-color: lightgreen' if col in ['KB', 'α'] else '' for col in row.index]
+    else:
+        return ['' for _ in row.index]
+
+styled_table = truth_table.style.apply(highlight_kb_alpha, axis=1)
+display(styled_table)
+
+if result:
+    print("\nKB entails α")
+else:
+    print("\nKB does not entail α")
